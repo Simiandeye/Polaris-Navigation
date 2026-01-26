@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title id="web-title">北极星导航</title>
+    <style>
+        :root {
+            --theme-color: #646cff;
+            --bg-gradient: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+            --text-main: #1a1a1b;
+            --text-dim: #606067;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --card-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+            --item-glow: rgba(100, 108, 255, 0.2);
+        }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+        body { margin: 0; font-family: -apple-system, "Noto Sans SC", sans-serif; background: var(--bg-gradient); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
+        
+        /* --- 前台 UI --- */
+        header { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; position: sticky; top: 0; background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); z-index: 1000; }
+        .header-left { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 17px; }
+        .head-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+        .header-right { display: flex; align-items: center; gap: 24px; color: var(--text-dim); }
+        .icon-btn { cursor: pointer; transition: 0.3s; display: flex; align-items: center; }
+        .icon-btn:hover { color: var(--theme-color); }
+        
+        /* --- 菜单与搜索 --- */
+        #menu-mask { position: fixed; inset: 0; background: rgba(0,0,0,0.1); backdrop-filter: blur(4px); opacity: 0; visibility: hidden; transition: 0.3s; z-index: 1999; }
+        #menu-mask.active { opacity: 1; visibility: visible; }
+        #menu-drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100vh; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(25px); box-shadow: -10px 0 40px rgba(0,0,0,0.05); z-index: 2000; transition: 0.4s; padding: 80px 20px; }
+        #menu-drawer.active { transform: translateX(-280px); }
+        .drawer-label { font-size: 11px; color: #999; font-weight: 700; letter-spacing: 2px; margin-bottom: 24px; padding-left: 15px; }
+        .menu-list-item { padding: 16px 20px; font-size: 15px; border-radius: 16px; margin-bottom: 8px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: space-between; }
+        .menu-list-item:hover { background: #fff; color: var(--theme-color); padding-left: 25px; }
+        #search-container { max-height: 0; overflow: hidden; transition: 0.4s; background: var(--glass-bg); backdrop-filter: blur(10px); }
+        #search-container.active { max-height: 80px; padding: 15px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .search-wrapper { max-width: 600px; margin: 0 auto; display: flex; gap: 10px; }
+        .search-wrapper input { flex: 1; padding: 12px 20px; border-radius: 14px; border: 1px solid rgba(0,0,0,0.08); outline: none; }
+        .search-wrapper button { padding: 0 20px; border-radius: 14px; border: none; background: var(--theme-color); color: white; cursor: pointer; }
+        
+        /* --- Hero --- */
+        .hero { padding: 60px 20px 40px; text-align: center; }
+        .hero-avatar-box { width: 110px; height: 110px; margin: 0 auto 24px; }
+        .hero-avatar-box img { width: 100%; height: 100%; border-radius: 50%; border: 4px solid #fff; box-shadow: var(--card-shadow); }
+        .hero-title { font-size: 34px; font-weight: 800; margin: 0; }
+        .hero-desc { font-size: 15px; color: var(--text-dim); margin-top: 12px; opacity: 0.8; }
+        
+        /* --- 内容网格 (5列圆图标) --- */
+        .main-content { max-width: 800px; margin: 0 auto 100px; padding: 0 24px; }
+        .category-group { margin-top: 48px; }
+        .category-title { font-size: 13px; font-weight: 700; color: #999; display: flex; align-items: center; gap: 15px; margin-bottom: 28px; }
+        .category-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(0,0,0,0.06), transparent); }
+        .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 24px 8px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: inherit; transition: 0.3s; }
+        .icon-box { width: 54px; height: 54px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.03); box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: 0.4s; overflow: hidden; }
+        .nav-item:hover .icon-box { transform: translateY(-5px); border-color: var(--theme-color); box-shadow: 0 10px 20px var(--item-glow); }
+        .nav-item span { font-size: 11px; font-weight: 500; opacity: 0.8; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="header-left"><img id="header-avatar" src="https://lz.qaiu.top/d/iz/aIbnz4S6" class="head-avatar"><span id="header-title">北极星导航</span></div>
+        <div class="header-right">
+            <div class="icon-btn" onclick="toggleSearch()"><svg width="20" height="20" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                </svg></div>
+            <div class="icon-btn" onclick="toggleMenu()"><svg width="22" height="22" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M3 12h18M3 6h18M3 18h18"></path>
+                </svg></div>
+        </div>
+    </header>
+    <div id="search-container">
+        <div class="search-wrapper"><input type="text" id="search-input" placeholder="极星搜索..."><button onclick="executeSearch()">搜索</button></div>
+    </div>
+    <div id="menu-mask" onclick="toggleMenu()" class=""></div>
+    <div id="menu-drawer" class="">
+        <div class="drawer-label">分类导航</div>
+        <div id="drawer-list">
+            <div class="menu-list-item" onclick="jumpTo('sec-0')"><span>技术栈</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-1')"><span>资源分享</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-2')"><span>直链存储</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-3')"><span>网站托管</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-4')"><span>资源快传</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-5')"><span>个人收藏</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+            <div class="menu-list-item" onclick="jumpTo('sec-6')"><span>友链分享</span><span style="opacity:0.3;font-size:12px;">→</span></div>
+        </div>
+    </div>
+    <section class="hero">
+        <div class="hero-avatar-box"><img id="main-avatar" src="https://lz.qaiu.top/d/iz/aIbnz4S6"></div>
+        <h1 class="hero-title" id="hero-display-title">北极星导航</h1>
+        <p class="hero-desc" id="hero-display-subtitle">由北极星引导，直达每一个精彩终端。</p>
+    </section>
+    <div id="nav-container" class="main-content">
+        <div class="category-group" id="sec-0">
+            <div class="category-title">技术栈</div>
+            <div class="nav-grid"><a href="https://vitejs.cn/vite3-cn/guide/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://github.githubassets.com/assets/pinned-octocat-093da3e6fa40.svg" style="width:26px; height:26px; object-fit:contain;"></div><span>GitHub</span>
+                </a><a href="https://github.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://vitejs.cn/vite3-cn/logo.svg" style="width:26px; height:26px; object-fit:contain;"></div><span>Vite</span>
+                </a><a href="https://cn.vuejs.org/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://cn.vuejs.org/logo.svg" style="width:26px; height:26px; object-fit:contain;"></div><span>Vue</span>
+                </a><a href="https://chatgpt.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://openai.com/favicon.svg" style="width:26px; height:26px; object-fit:contain;"></div><span>ChatGPT</span>
+                </a><a href="https://gemini.google.com/app" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://www.gstatic.com/lamda/images/gemini_sparkle_aurora_33f86dc0c0257da337c63.svg" style="width:26px; height:26px; object-fit:contain;"></div><span>Gemini</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-1">
+            <div class="category-title">资源分享</div>
+            <div class="nav-grid"><a href="https://my-tvbox.netlify.app/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://lz.qaiu.top/d/iz/aIbnz4S6" style="width:26px; height:26px; object-fit:contain;"></div><span>影视分享</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-2">
+            <div class="category-title">直链存储</div>
+            <div class="nav-grid"><a href="https://kstore.cc/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://kstore.cc/img/logo_header_xs.95f918ac.png" style="width:26px; height:26px; object-fit:contain;"></div><span>凯速</span>
+                </a><a href="https://pan.qingyuji.cn" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://qyobs.beijing1.obs.zyuncs.com/uploads/1/c4f5d605-7956-496f-bb41-62bbc96e198a_下载.png" style="width:26px; height:26px; object-fit:contain;"></div><span>轻屿云盘</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-3">
+            <div class="category-title">网站托管</div>
+            <div class="nav-grid"><a href="https://www.rainyun.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://www.rainyun.com/img/logo.d193755d.png" style="width:26px; height:26px; object-fit:contain;"></div><span>雨云</span>
+                </a><a href="https://www.maoziyun.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://www.maoziyun.com/favicon/favicon.png" style="width:26px; height:26px; object-fit:contain;"></div><span>帽子云</span>
+                </a><a href="https://www.netlify.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://www.netlify.com/favicon/apple-touch-icon.png" style="width:26px; height:26px; object-fit:contain;"></div><span>netlify</span>
+                </a><a href="https://vercel.com/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://vercel.com/vc-ap-vercel-marketing/_next/static/media/vercel-logotype-light.03d65485.svg?dpl=dpl_CJLjB7k2h39dkhNFYjFqaGrzdNsP" style="width:26px; height:26px; object-fit:contain;"></div><span>vercel</span>
+                </a><a href="https://zeabur.cn/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://zeabur.cn/android-chrome-192x192.png" style="width:26px; height:26px; object-fit:contain;"></div><span>zeabur</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-4">
+            <div class="category-title">资源快传</div>
+            <div class="nav-grid"><a href="https://www.airportal.cn/" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://assets.retiehe.com/ap-icon-192-3.png" style="width:26px; height:26px; object-fit:contain;"></div><span>空投快传</span>
+                </a><a href="https://yunge.in/#" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://yunge.in/images/apple-touch-icon.png" style="width:26px; height:26px; object-fit:contain;"></div><span>云鸽快传</span>
+                </a><a href="https://sdtsdt.net/usage.html" target="_blank" class="nav-item">
+                    <div class="icon-box"><img src="https://sdtsdt.net/icon.png" style="width:26px; height:26px; object-fit:contain;"></div><span>闪电藤</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-5">
+            <div class="category-title">个人收藏</div>
+            <div class="nav-grid"><a href="#" target="_blank" class="nav-item">
+                    <div class="icon-box">🌐</div><span>新链接</span>
+                </a></div>
+        </div>
+        <div class="category-group" id="sec-6">
+            <div class="category-title">友链分享</div>
+            <div class="nav-grid"></div>
+        </div>
+    </div>
+    <script>
+        let GLOBAL_DATA = {
+                "name": "北极星导航",
+                "avatar": "https://lz.qaiu.top/d/iz/aIbnz4S6",
+                "subtitle": "由北极星引导，直达每一个精彩终端。",
+                "sections": [
+                        {
+                                "title": "技术栈",
+                                "items": [
+                                        {
+                                                "name": "GitHub ",
+                                                "icon": "https://github.githubassets.com/assets/pinned-octocat-093da3e6fa40.svg",
+                                                "url": "https://github.com/"
+                                        },
+                                        {
+                                                "name": "Vite",
+                                                "icon": "https://vitejs.cn/vite3-cn/logo.svg",
+                                                "url": "https://vitejs.cn/vite3-cn/guide/"
+                                        },
+                                        {
+                                                "name": "Vue",
+                                                "icon": "https://cn.vuejs.org/logo.svg",
+                                                "url": "https://cn.vuejs.org/"
+                                        },
+                                        {
+                                                "name": "ChatGPT",
+                                                "icon": "https://openai.com/favicon.svg",
+                                                "url": "https://chatgpt.com/"
+                                        },
+                                        {
+                                                "name": "Gemini ",
+                                                "icon": "https://www.gstatic.com/lamda/images/gemini_sparkle_aurora_33f86dc0c0257da337c63.svg",
+                                                "url": "https://gemini.google.com/app"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "资源分享",
+                                "items": [
+                                        {
+                                                "name": "影视分享",
+                                                "icon": "https://lz.qaiu.top/d/iz/aIbnz4S6",
+                                                "url": "https://my-tvbox.netlify.app/"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "直链存储",
+                                "items": [
+                                        {
+                                                "name": "凯速",
+                                                "icon": "https://kstore.cc/img/logo_header_xs.95f918ac.png",
+                                                "url": "https://kstore.cc/"
+                                        },
+                                        {
+                                                "name": "轻屿云盘",
+                                                "icon": "https://qyobs.beijing1.obs.zyuncs.com/uploads/1/c4f5d605-7956-496f-bb41-62bbc96e198a_下载.png",
+                                                "url": "https://pan.qingyuji.cn"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "网站托管",
+                                "items": [
+                                        {
+                                                "name": "雨云",
+                                                "icon": "https://www.rainyun.com/img/logo.d193755d.png",
+                                                "url": "https://www.rainyun.com/"
+                                        },
+                                        {
+                                                "name": "帽子云",
+                                                "icon": "https://www.maoziyun.com/favicon/favicon.png",
+                                                "url": "https://www.maoziyun.com/"
+                                        },
+                                        {
+                                                "name": "netlify",
+                                                "icon": "https://www.netlify.com/favicon/apple-touch-icon.png",
+                                                "url": "https://www.netlify.com/"
+                                        },
+                                        {
+                                                "name": "vercel",
+                                                "icon": "https://vercel.com/vc-ap-vercel-marketing/_next/static/media/vercel-logotype-light.03d65485.svg?dpl=dpl_CJLjB7k2h39dkhNFYjFqaGrzdNsP",
+                                                "url": "https://vercel.com/"
+                                        },
+                                        {
+                                                "name": "zeabur",
+                                                "icon": "https://zeabur.cn/android-chrome-192x192.png",
+                                                "url": "https://zeabur.cn/"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "资源快传",
+                                "items": [
+                                        {
+                                                "name": "空投快传",
+                                                "icon": "https://assets.retiehe.com/ap-icon-192-3.png",
+                                                "url": "https://www.airportal.cn/"
+                                        },
+                                        {
+                                                "name": "云鸽快传",
+                                                "icon": "https://yunge.in/images/apple-touch-icon.png",
+                                                "url": "https://yunge.in/#"
+                                        },
+                                        {
+                                                "name": "闪电藤",
+                                                "icon": "https://sdtsdt.net/icon.png",
+                                                "url": "https://sdtsdt.net/usage.html"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "个人收藏",
+                                "items": [
+                                        {
+                                                "name": "新链接",
+                                                "icon": "🌐",
+                                                "url": "#"
+                                        }
+                                ]
+                        },
+                        {
+                                "title": "友链分享",
+                                "items": [
+                                        {
+                                                "name": "摸鱼技术网",
+                                                "icon": "https://www.摸鱼儿.com/wp-content/uploads/2024/05/ce22d5c9-af41-47ad-8f55-534c80b98318.png",
+                                                "url": "https://www.摸鱼儿.com/"
+                                        }     
+                                ]
+                        }
+                ]
+        };
+        function renderUI() {
+                    document.getElementById('header-title').innerText = GLOBAL_DATA.name;
+                    document.getElementById('hero-display-title').innerText = GLOBAL_DATA.name;
+                    document.getElementById('hero-display-subtitle').innerText = GLOBAL_DATA.subtitle;
+                    document.getElementById('header-avatar').src = GLOBAL_DATA.avatar;
+                    document.getElementById('main-avatar').src = GLOBAL_DATA.avatar;
+                    document.getElementById('web-title').innerText = GLOBAL_DATA.name;
+                    
+                    const container = document.getElementById('nav-container');
+                    const drawerList = document.getElementById('drawer-list');
+                    let navHtml = '', drawerHtml = '';
+                
+                    GLOBAL_DATA.sections.forEach((sec, idx) => {
+                        const sid = `sec-${idx}`;
+                        const itemsHtml = sec.items.map(item => {
+                            const isImg = item.icon.includes('http') || item.icon.includes('/') || item.icon.includes('.');
+                            const iconContent = isImg 
+                                ? `<img src="${item.icon}" style="width:26px; height:26px; object-fit:contain;">` 
+                                : item.icon;
+                
+                            return `<a href="${item.url}" target="_blank" class="nav-item">
+                                        <div class="icon-box">${iconContent}</div>
+                                        <span>${item.name}</span>
+                                    </a>`;
+                        }).join('');
+                
+                        navHtml += `<div class="category-group" id="${sid}"><div class="category-title">${sec.title}</div><div class="nav-grid">${itemsHtml}</div></div>`;
+                        drawerHtml += `<div class="menu-list-item" onclick="jumpTo('${sid}')"><span>${sec.title}</span><span style="opacity:0.3;font-size:12px;">→</span></div>`;
+                    });
+                    container.innerHTML = navHtml;
+                    drawerList.innerHTML = drawerHtml;
+                }
+        function applyPreview() {
+                    GLOBAL_DATA.name = document.getElementById('edit-name').value;
+                    GLOBAL_DATA.avatar = document.getElementById('edit-avatar').value;
+                    GLOBAL_DATA.subtitle = document.getElementById('edit-subtitle').value;
+                    renderUI();
+                }
+        function toggleSearch() { document.getElementById('search-container').classList.toggle('active'); }
+        function toggleMenu() { document.getElementById('menu-drawer').classList.toggle('active'); document.getElementById('menu-mask').classList.toggle('active'); }
+        function jumpTo(id) { window.scrollTo({ top: document.getElementById(id).offsetTop - 80, behavior: 'smooth' }); if(document.getElementById('menu-mask').classList.contains('active')) toggleMenu(); }
+        function executeSearch() { const val = document.getElementById('search-input').value; if(val) window.open(`https://www.baidu.com/s?wd=${encodeURIComponent(val)}`); }
+        renderUI();
+    </script>
+</body>
+
+</html>
